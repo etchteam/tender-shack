@@ -3,7 +3,7 @@ var type = dbm.dataType;
 
 exports.up = function(db, callback) {
   db.createTable('due_north', {
-    id: { type: 'int', primaryKey: true, autoincrement: true },
+    id: { type: 'int', primaryKey: true, autoIncrement: true },
     scrape_datetime: 'string',
     last_id: 'string'
   }, callback);

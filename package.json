@@ -19,9 +19,9 @@
     "express": "^4.13.3",
     "jade": "^1.11.0",
     "pg-promise": "^1.10.6",
-    "query-string": "^2.4.1",
     "request-promise": "^0.4.3",
-    "sql-bricks-postgres": "^0.4.1"
+    "sql-bricks-postgres": "^0.4.1",
+    "query-string": "^2.4.1"
   },
   "engines": {
     "node": "4.1.x"
