@@ -6,17 +6,18 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "scrape": "babel-node scrape.js"
+    "scrape": "babel-node scrape.js",
+    "connect": "babel-node database/connect.js"
   },
   "author": "RB",
   "license": "MIT",
   "dependencies": {
     "babel": "^5.8.23",
     "cheerio": "^0.19.0",
+    "dotenv": "^1.2.0",
     "express": "^4.13.3",
-    "request": "^2.62.0",
-    "express": "^4.13.3",
-    "pg": "^4.4.1"
+    "pg": "^4.4.1",
+    "request": "^2.62.0"
   },
   "engines": {
     "node": "4.1.x"
