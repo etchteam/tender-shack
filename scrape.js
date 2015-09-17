@@ -1,3 +1,3 @@
-import DueNorth from './scrapes/DueNorth';
+import dueNorth from './scrapes/dueNorth';
 
-DueNorth.run();
+dueNorth();
