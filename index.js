@@ -1,8 +1,12 @@
-require('dotenv').load();
-var express = require('express');
+import dotenv from 'dotenv';
+import express from 'express';
+import sql from 'sql-bricks-postgres';
+import pgPromise from 'pg-promise';
+
+dotenv.load();
+
+var pgp = pgPromise();
 var app = express();
-var sql = require('sql-bricks-postgres');
-var pgp = require('pg-promise')();
 
 var cn = {
   host: process.env.DB_HOST || 'localhost',
