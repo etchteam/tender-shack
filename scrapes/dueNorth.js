@@ -3,8 +3,7 @@ import cheerio from 'cheerio';
 import { parse } from 'query-string';
 import sql from 'sql-bricks-postgres';
 import db from '../database/db';
-
-const lastScrapeId = null;
+import isOfInterest from '../scraping/ofInterest';
 
 function scrapeIndex(response) {
     const $ = cheerio.load(response); 
@@ -130,19 +129,14 @@ function scrapeTender(tender) {
     }
 }
 
-function isOfInterest(...fields) {
-    return fields.filter(field => {
-        return field.match(/(web|app|crm|cms|internet|hosting)/i);
-    }).length > 0;
-}
-
 function filterTenders(tenders) {
     return tenders.map(scrapeTender).filter(tender => tender);
 }
 
 function saveData(data) {
     const promises = data.tenders.map(tender => saveTender(tender));
-    return Promise.all(promises.concat(saveScrape(data.lastId)));
+    return Promise.all(promises.concat(saveScrape(data.lastId)))
+        .then(() => data.tenders);
 }
 
 function saveScrape(lastId) {
@@ -167,5 +161,5 @@ export default function run() {
     return processPages()
         .then(processTenders)
         .then(saveData)
-        .catch(console.error);
+        .then((tenders) => console.log(`${tenders.length} Due North Tenders added`));
 };
