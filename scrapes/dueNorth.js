@@ -2,9 +2,9 @@ import request from 'request-promise';
 import cheerio from 'cheerio';
 import { parse } from 'query-string';
 
-const lastScrapeId = 'ba3db200-5d58-e511-80ef-000c29c9ba21';
+const lastScrapeId = null;
 
-function processIndex(response) {
+function scrapeIndex(response) {
     const $ = cheerio.load(response); 
     const linkEls = $('#opportunitiesGrid > tbody > tr > td:nth-child(1) > a');
 
@@ -14,7 +14,7 @@ function processIndex(response) {
         return {
             title: $(link).text(),
             id: query['advertId'],
-            link: `https://procontract.due-north.com${href}`
+            url: `https://procontract.due-north.com${href}`
         };
     });
 }
@@ -29,7 +29,7 @@ function loadIndex(page = 1) {
     return new Promise((resolve, reject) => {
         request(url)
             .then((response) => {
-                resolve(processIndex(response));
+                resolve(scrapeIndex(response));
             })
             .catch((error) => {
                 reject(error);
@@ -40,14 +40,18 @@ function loadIndex(page = 1) {
 function processPages() {
     return new Promise((resolve, reject) => {
         let allPages = [];
+        let lastId = null;
         function check(i) {
             loadIndex(i)
                 .then(pages => {
-                    const ids = pages.map(page => page.id)
+                    const ids = pages.map(page => page.id);
+                    if (!lastId) {
+                        lastId = ids[0];
+                    }
                     if (ids.indexOf(lastScrapeId) > -1 || i == 5) {
                         let needed = true;
-                        neededPages = pages.reduce(memo, page => {
-                            if (!needed) return;
+                        const neededPages = pages.reduce((memo, page) => {
+                            if (!needed) return memo;
                             if (page.id == lastScrapeId) {
                                 needed = false;
                             } else {
@@ -55,7 +59,10 @@ function processPages() {
                             }
                             return memo;
                         }, []);
-                        resolve(allPages.concat(pages));
+                        resolve({
+                            lastId,
+                            tenders: allPages.concat(neededPages)
+                        });
                     } else {
                         allPages = allPages.concat(pages);
                         check(i + 1);
@@ -70,9 +77,64 @@ function processPages() {
     });
 }
 
+function processTenders(results) {
+    return new Promise((resolve, reject) => {
+        const promises = results.tenders.map(tender => {
+            return request(tender.url)
+                .then(response => { 
+                    return {
+                        summary: tender,
+                        response: response
+                    }
+                });
+        });
+
+        Promise.all(promises)
+            .then(tenders => {
+                resolve({
+                    lastId: results.lastId,
+                    tenders: filterTenders(tenders)
+                });
+            })
+            .catch(error => reject(error));
+    });
+}
+
+function scrapeTender(tender) {
+    const mainSectionSelector = '#sticky-footer-helper > main > div > div.main-section';
+    const $ = cheerio.load(tender.response); 
+    const description = $(`${mainSectionSelector} > div:nth-child(1) > div > div:nth-child(4) > div.descriptionLess > div.cell400`).text();
+    if (isOfInterest(tender.summary.title, description)) {
+        return {
+            title: tender.summary.title,
+            url: tender.summary.url,
+            description: description,
+            value: $(`${mainSectionSelector} > div:nth-child(1) > div > div:nth-child(5) > div.cell400`).text(),
+            contract_start_datetime: $(`${mainSectionSelector} > div:nth-child(2) > div > div:nth-child(2) > div:nth-child(2)`).text(),
+            contract_end_datetime: $(`${mainSectionSelector} > div:nth-child(2) > div > div:nth-child(2) > div:nth-child(4)`).text(),
+            submission_start_datetime: $(`${mainSectionSelector} > div:nth-child(2) > div > div:nth-child(5) > div:nth-child(2)`).text(),
+            submission_end_datetime: $(`${mainSectionSelector} > div:nth-child(2) > div > div:nth-child(5) > div:nth-child(4)`).text(),
+        }
+    }
+}
+
+function isOfInterest(...fields) {
+    return fields.filter(field => {
+        return field.match(/(web|app|crm|cms|internet|hosting)/i);
+    }).length > 0;
+}
+
+function filterTenders(tenders) {
+    return tenders.map(scrapeTender).filter(tender => tender);
+}
+
+function saveData(data) {
+    console.dir(data);
+}
 
 export default function run() {
     processPages()
-        .then(console.dir)
+        .then(processTenders)
+        .then(saveData)
         .catch(console.error);
 };
