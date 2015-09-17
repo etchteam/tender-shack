@@ -17,7 +17,7 @@
     "dotenv": "^1.2.0",
     "express": "^4.13.3",
     "query-string": "^2.4.1",
-    "request-promise": "^0.4.3"
+    "request-promise": "^0.4.3",
     "pg-promise": "^1.10.6",
     "sql-bricks-postgres": "^0.4.1"
   },
