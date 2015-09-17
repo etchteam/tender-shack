@@ -19,7 +19,8 @@
     "query-string": "^2.4.1",
     "request-promise": "^0.4.3",
     "pg-promise": "^1.10.6",
-    "sql-bricks-postgres": "^0.4.1"
+    "sql-bricks-postgres": "^0.4.1",
+    "db-migrate": "^0.9.22"
   },
   "engines": {
     "node": "4.1.x"
