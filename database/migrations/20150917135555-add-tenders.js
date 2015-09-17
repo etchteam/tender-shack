@@ -3,7 +3,7 @@ var type = dbm.dataType;
 
 exports.up = function(db, callback) {
   db.createTable('tenders', {
-    id: { type: 'int', primaryKey: true, autoincrement: true },
+    id: { type: 'int', primaryKey: true, autoIncrement: true },
     title: 'string',
     link: 'string',
     tender_id: 'string',

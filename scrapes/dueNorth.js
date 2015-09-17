@@ -1,6 +1,8 @@
 import request from 'request-promise';
 import cheerio from 'cheerio';
 import { parse } from 'query-string';
+import sql from 'sql-bricks-postgres';
+import db from '../database/db';
 
 const lastScrapeId = null;
 
@@ -37,22 +39,33 @@ function loadIndex(page = 1) {
     });
 }
 
+function scrapedOnPage(ids) {
+    const query = sql.select('last_id').from('due_north').where(sql.in('last_id', ids)).toString();
+    return db.query(query);
+}
+
 function processPages() {
     return new Promise((resolve, reject) => {
         let allPages = [];
         let lastId = null;
+        let pages;
         function check(i) {
             loadIndex(i)
-                .then(pages => {
+                .then(currentPages => {
+                    pages = currentPages;
                     const ids = pages.map(page => page.id);
                     if (!lastId) {
                         lastId = ids[0];
                     }
-                    if (ids.indexOf(lastScrapeId) > -1 || i == 5) {
+                    return scrapedOnPage(ids);
+                })
+                .then(results => {
+                    if (results.length || i == 5) {
+                        const ids = results.map(result => result.last_id);
                         let needed = true;
                         const neededPages = pages.reduce((memo, page) => {
                             if (!needed) return memo;
-                            if (page.id == lastScrapeId) {
+                            if (ids.indexOf(page.id) > -1) {
                                 needed = false;
                             } else {
                                 memo.push(page);
@@ -67,7 +80,6 @@ function processPages() {
                         allPages = allPages.concat(pages);
                         check(i + 1);
                     }
-
                 })
                 .catch(error => {
                     reject(error);
@@ -107,7 +119,7 @@ function scrapeTender(tender) {
     if (isOfInterest(tender.summary.title, description)) {
         return {
             title: tender.summary.title,
-            url: tender.summary.url,
+            link: tender.summary.url,
             description: description,
             value: $(`${mainSectionSelector} > div:nth-child(1) > div > div:nth-child(5) > div.cell400`).text(),
             contract_start_datetime: $(`${mainSectionSelector} > div:nth-child(2) > div > div:nth-child(2) > div:nth-child(2)`).text(),
@@ -129,11 +141,30 @@ function filterTenders(tenders) {
 }
 
 function saveData(data) {
-    console.dir(data);
+    const promises = data.tenders.map(tender => saveTender(tender));
+    return Promise.all(promises.concat(saveScrape(data.lastId)));
+}
+
+function saveScrape(lastId) {
+    return new Promise((resolve, reject) => {
+        const query = sql.insert('due_north', {scrape_datetime: new Date(), last_id: lastId}).toString();
+        db.query(query)
+            .then(resolve)
+            .catch(reject);
+    });
+}
+
+function saveTender(tender) {
+    return new Promise((resolve, reject) => {
+        const query = sql.insert('tenders', tender).toString();
+        db.query(query)
+            .then(resolve)
+            .catch(reject);
+    });   
 }
 
 export default function run() {
-    processPages()
+    return processPages()
         .then(processTenders)
         .then(saveData)
         .catch(console.error);
