@@ -10,7 +10,8 @@
   "author": "RB",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.13.3"
+    "express": "^4.13.3",
+    "pg": "^4.4.1"
   },
   "engines": {
     "node": "4.1.x"
