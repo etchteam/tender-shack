@@ -1,0 +1,11 @@
+extends layout
+
+block content
+  .container
+    .row
+      .col-xs-12
+        section
+          each tender in tenders
+            h1: a(href="#{tender.link}")!= tender.title
+            h2 &pound; #{tender.value}
+            p #{tender.description}
