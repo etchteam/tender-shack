@@ -4,8 +4,10 @@ block content
   .container
     .row
       .col-xs-12
-        section
           each tender in tenders
-            h1: a(href="#{tender.link}")!= tender.title
-            h2 &pound; #{tender.value}
-            p #{tender.description}
+            section.panel.panel-default
+              .panel-heading
+                h2.panel-title: a(href="#{tender.link}")!= tender.title
+              .panel-body
+                p.lead.text-uppercase.text-success: strong #{tender.value}
+                p(style='white-space: pre-wrap') #{tender.description}
